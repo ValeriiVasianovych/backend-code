@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Repository List</title>
+</head>
+<body>
+    <h1>Your Repositories</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p style="color: {{ 'red' if category == 'error' else 'green' }}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {% if repos %}
+        <ul>
+        {% for repo in repos %}
+            <li>
+                <strong>{{ repo.name }}</strong>: {{ repo.description or 'No description' }}<br>
+                Stars: {{ repo.stargazers_count }} | Forks: {{ repo.forks_count }}
+            </li>
+        {% endfor %}
+        </ul>
+        <a href="{{ url_for('index') }}">Back to Home</a> | <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+        <p>No repositories found.</p>
+        <a href="{{ url_for('index') }}">Back to Home</a>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Car Rental Service{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-4">Welcome to Car Rental Service</h1>
+            
+            {% if current_user and current_user.is_authenticated %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Available Cars</h5>
+                        <div id="cars-list" class="row">
+                            <!-- Cars will be loaded here dynamically -->
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Get Started</h5>
+                        <p class="card-text">Please login or register to view and rent cars.</p>
+                        <div class="d-grid gap-2 d-md-block">
+                            <a href="{{ url_for('auth.login_page') }}" class="btn btn-primary me-md-2">Login</a>
+                            <a href="{{ url_for('auth.register_page') }}" class="btn btn-outline-primary">Register</a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if current_user and current_user.is_authenticated %}
+<script>
+async function loadCars() {
+    try {
+        const response = await fetch('/rentals/cars', {
+            headers: getAuthHeader()
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const carsList = document.getElementById('cars-list');
+            carsList.innerHTML = '';
+
+            data.cars.forEach(car => {
+                const carCard = `
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">${car.brand} ${car.model}</h5>
+                                <p class="card-text">
+                                    Year: ${car.year}<br>
+                                    Color: ${car.color}<br>
+                                    Price per day: $${car.rental_price_per_day}
+                                </p>
+                                <button class="btn btn-primary" onclick="rentCar('${car._id}')">Rent Now</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                carsList.innerHTML += carCard;
+            });
+        } else if (response.status === 401) {
+            // Try to refresh token
+            const refreshed = await refreshToken();
+            if (refreshed) {
+                loadCars(); // Retry loading cars
+            } else {
+                window.location.href = "{{ url_for('auth.login_page') }}";
+            }
+        }
+    } catch (error) {
+        console.error('Error loading cars:', error);
+    }
+}
+
+async function rentCar(carId) {
+    try {
+        const response = await fetch(`/rentals/cars/${carId}/rent`, {
+            method: 'POST',
+            headers: {
+                ...getAuthHeader(),
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            alert('Car rented successfully!');
+            loadCars(); // Refresh the cars list
+        } else if (response.status === 401) {
+            const refreshed = await refreshToken();
+            if (refreshed) {
+                rentCar(carId); // Retry renting
+            } else {
+                window.location.href = "{{ url_for('auth.login_page') }}";
+            }
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to rent car');
+        }
+    } catch (error) {
+        console.error('Error renting car:', error);
+        alert('An error occurred while trying to rent the car');
+    }
+}
+
+// Load cars when the page loads
+document.addEventListener('DOMContentLoaded', loadCars);
+</script>
+{% endif %}
+{% endblock %}

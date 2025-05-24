@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Confirmation</title>
+</head>
+<body>
+    <h1>Account Confirmation</h1>
+    <p>To continue, please confirm your GitHub account.</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p style="color: {{ 'red' if category == 'error' else 'green' }}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <a href="{{ url_for('login') }}" class="login-button">Login with GitHub</a>
+</body>
+</html>

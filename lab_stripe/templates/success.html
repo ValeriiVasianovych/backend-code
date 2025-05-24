@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Success!</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        .success-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 40px;
+        }
+        h1 {
+            color: #38a169;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #4a5568;
+            margin-bottom: 30px;
+        }
+        .order-id {
+            font-family: monospace;
+            background: #f0fff4;
+            padding: 10px;
+            border-radius: 4px;
+            color: #2f855a;
+        }
+        a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4299e1;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        a:hover {
+            background-color: #2b6cb0;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <h1>Thank you for your purchase!</h1>
+        <p>Your order has been successfully paid</p>
+        <p class="order-id">Payment ID: {{ session.id }}</p>
+        <a href="{{ url_for('index') }}">Back to Shop</a>
+    </div>
+</body>
+</html>
