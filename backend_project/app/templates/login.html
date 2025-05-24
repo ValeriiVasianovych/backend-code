@@ -1,64 +1,89 @@
-{% extends "base.html" %}
-
-{% block title %}Login - Car Rental Service{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Login - Car Rental Service{% endblock
+%} {% block content %}
 <div class="auth-form">
-    <h2 class="text-center mb-4">Login</h2>
-    <div id="error-message" class="error-message text-center" style="display: none;"></div>
-    <form id="login-form" onsubmit="handleLogin(event)">
-        <div class="mb-3">
-            <label for="email" class="form-label">Email address</label>
-            <input type="email" class="form-control" id="email" name="email" required>
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Login</button>
-    </form>
-    <div class="text-center mt-3">
-        <p>Don't have an account? <a href="{{ url_for('auth.register_page') }}">Register here</a></p>
+  <h2 class="text-center mb-4">Login</h2>
+  <div
+    id="error-message"
+    class="error-message text-center"
+    style="display: none"
+  ></div>
+  <form id="login-form" onsubmit="handleLogin(event)">
+    <div class="mb-3">
+      <label for="email" class="form-label">Email address</label>
+      <input
+        type="email"
+        class="form-control"
+        id="email"
+        name="email"
+        required
+      />
     </div>
+    <div class="mb-3">
+      <label for="password" class="form-label">Password</label>
+      <input
+        type="password"
+        class="form-control"
+        id="password"
+        name="password"
+        required
+      />
+    </div>
+    <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+    <div class="text-center mb-3">
+      <p class="text-muted">- OR -</p>
+    </div>
+    <a href="{{ url_for('auth.github_login') }}" class="btn btn-dark w-100">
+      <i class="fab fa-github me-2"></i>Login with GitHub
+    </a>
+  </form>
+  <div class="text-center mt-3">
+    <p>
+      Don't have an account?
+      <a href="{{ url_for('auth.register_page') }}">Register here</a>
+    </p>
+  </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+/>
+{% endblock %} {% block extra_js %}
 <script>
-async function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
-    const errorMessage = document.getElementById('error-message');
-    errorMessage.style.display = 'none';
+    const errorMessage = document.getElementById("error-message");
+    errorMessage.style.display = "none";
 
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
     try {
-        const response = await fetch('/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-        });
+      const response = await fetch("/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (response.ok) {
-            // Store tokens
-            localStorage.setItem('access_token', data.tokens.access_token);
-            localStorage.setItem('refresh_token', data.tokens.refresh_token);
-            
-            // Redirect to cars page
-            window.location.href = "{{ url_for('rentals.cars_page') }}";
-        } else {
-            errorMessage.textContent = data.error || 'Login failed';
-            errorMessage.style.display = 'block';
-        }
+      if (response.ok) {
+        // Store tokens
+        localStorage.setItem("access_token", data.tokens.access_token);
+        localStorage.setItem("refresh_token", data.tokens.refresh_token);
+
+        // Redirect to cars page
+        window.location.href = "{{ url_for('rentals.cars_page') }}";
+      } else {
+        errorMessage.textContent = data.error || "Login failed";
+        errorMessage.style.display = "block";
+      }
     } catch (error) {
-        errorMessage.textContent = 'An error occurred. Please try again.';
-        errorMessage.style.display = 'block';
+      errorMessage.textContent = "An error occurred. Please try again.";
+      errorMessage.style.display = "block";
     }
-}
+  }
 </script>
-{% endblock %} 
+{% endblock %}

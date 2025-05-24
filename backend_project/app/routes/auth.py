@@ -1,14 +1,19 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for
 from app.extensions import mongo
 from app.services.auth_service import AuthService
+from app.services.github_service import GitHubService
 from app.utils.decorators import token_required
 from app.utils.validators import validate_email, validate_password
 import jwt
 from app.config import Config
 from bson import ObjectId
+import logging
+import traceback
 
 auth_bp = Blueprint('auth', __name__)
 auth_service = AuthService()
+github_service = GitHubService()
+logger = logging.getLogger(__name__)
 
 @auth_bp.route('/login', methods=['GET'])
 def login_page():
@@ -85,13 +90,26 @@ def login():
             return jsonify({'error': 'Required fields are missing'}), 400
             
         user = auth_service.get_user_by_email(email)
-        if not user or not auth_service.verify_password(password, user['password']):
+        if not user:
+            logger.error(f"User not found for email: {email}")
             return jsonify({'error': 'Invalid email or password'}), 401
             
-        tokens = auth_service.generate_tokens(user['_id'])
-        return jsonify({'tokens': tokens}), 200
+        if not auth_service.verify_password(password, user['password']):
+            logger.error(f"Invalid password for user: {email}")
+            return jsonify({'error': 'Invalid email or password'}), 401
+            
+        try:
+            tokens = auth_service.generate_tokens(user['_id'])
+            logger.info(f"Successfully generated tokens for user: {email}")
+            return jsonify({'tokens': tokens}), 200
+        except Exception as token_error:
+            logger.error(f"Token generation error: {str(token_error)}")
+            logger.error(f"Token error traceback: {traceback.format_exc()}")
+            return jsonify({'error': 'Token generation failed'}), 500
         
     except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        logger.error(f"Login error traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Internal server error'}), 500
 
 @auth_bp.route('/refresh', methods=['POST'])
@@ -141,4 +159,64 @@ def get_users(current_user):
         }), 200
         
     except Exception as e:
+        return jsonify({'error': 'Internal server error'}), 500
+
+@auth_bp.route('/current-user', methods=['GET'])
+@token_required
+def get_current_user(current_user):
+    try:
+        # Remove sensitive data
+        if 'password' in current_user:
+            del current_user['password']
+            
+        # Convert ObjectId to string
+        current_user['_id'] = str(current_user['_id'])
+        
+        return jsonify(current_user), 200
+        
+    except Exception as e:
+        return jsonify({'error': 'Internal server error'}), 500
+
+@auth_bp.route('/github-login')
+def github_login():
+    """Redirect to GitHub OAuth page"""
+    return redirect(github_service.get_github_auth_url())
+
+@auth_bp.route('/github-callback')
+def github_callback():
+    """Handle GitHub OAuth callback"""
+    try:
+        code = request.args.get('code')
+        if not code:
+            return jsonify({'error': 'No code provided'}), 400
+
+        # Get access token
+        access_token = github_service.get_github_token(code)
+        if not access_token:
+            return jsonify({'error': 'Failed to get access token'}), 400
+
+        # Get user info from GitHub
+        github_user = github_service.get_github_user(access_token)
+        if not github_user:
+            return jsonify({'error': 'Failed to get user info'}), 400
+
+        # Get user emails
+        emails = github_service.get_github_emails(access_token)
+        if not emails:
+            return jsonify({'error': 'Failed to get user emails'}), 400
+
+        # Create or update user
+        user = github_service.create_or_update_user(github_user, emails)
+        if not user:
+            return jsonify({'error': 'Failed to create/update user'}), 400
+
+        # Generate JWT tokens
+        tokens = auth_service.generate_tokens(user['_id'])
+        
+        # Render template with tokens
+        return render_template('github_callback.html', tokens=tokens)
+        
+    except Exception as e:
+        logger.error(f"GitHub callback error: {str(e)}")
+        logger.error(f"GitHub callback error traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Internal server error'}), 500

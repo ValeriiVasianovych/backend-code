@@ -14,7 +14,12 @@ def create_app():
     
     # Load configuration before MongoDB initialization
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['MONGO_URI'] = f"mongodb+srv://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@flaskdb.2ttjd.mongodb.net/car_rental?retryWrites=true&w=majority&appName=FlaskDB"
+    app.config['MONGO_URI'] = f"mongodb+srv://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@flaskdb.2ttjd.mongodb.net/car_rental?retryWrites=true&w=majority&appName=FlaskDB&tlsAllowInvalidCertificates=true"
+    
+    # GitHub OAuth settings
+    app.config['GITHUB_CLIENT_ID'] = os.getenv('GITHUB_CLIENT_ID')
+    app.config['GITHUB_CLIENT_SECRET'] = os.getenv('GITHUB_CLIENT_SECRET')
+    app.config['GITHUB_REDIRECT_URI'] = os.getenv('GITHUB_REDIRECT_URI')
     
     # Configure logging
     logging.basicConfig(level=logging.INFO)
@@ -56,7 +61,7 @@ def create_app():
                         return current_user
                 except:
                     pass
-            return {'is_authenticated': False}
+            return None
         return {'current_user': get_current_user()}
 
     return app
