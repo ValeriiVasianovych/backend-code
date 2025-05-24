@@ -1,10 +1,14 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, render_template
 from app.extensions import mongo
 from app.utils.decorators import token_required
 from bson import ObjectId
 from datetime import datetime
 
 rentals_bp = Blueprint('rentals', __name__)
+
+@rentals_bp.route('/cars', methods=['GET'])
+def cars_page():
+    return render_template('cars.html')
 
 @rentals_bp.route('/cars', methods=['GET'])
 @token_required

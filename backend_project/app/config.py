@@ -2,6 +2,7 @@ import os
 import secrets
 import datetime
 from dotenv import load_dotenv
+from app.jwt_config import JWT_SECRET_KEY
 
 load_dotenv()
 
@@ -10,7 +11,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
     
     # JWT настройки
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", secrets.token_hex(32))
+    JWT_SECRET_KEY = JWT_SECRET_KEY
     JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(minutes=15)
     JWT_REFRESH_TOKEN_EXPIRES = datetime.timedelta(days=7)
     
