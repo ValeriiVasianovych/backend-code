@@ -8,6 +8,7 @@ from app.extensions import mongo
 from datetime import datetime
 import jwt
 from app.config import Config
+from bson.objectid import ObjectId
 
 class AuthService:
     def create_user(self, email, password):
@@ -53,3 +54,26 @@ class AuthService:
             'iat': datetime.utcnow()
         }
         return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm='HS256')
+
+    def change_password(self, user_id, current_password, new_password):
+        try:
+            user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
+            if not user:
+                raise ValueError('User not found')
+            
+            if not self.verify_password(current_password, user['password']):
+                raise ValueError('Current password is incorrect')
+            
+            if not validate_password(new_password):
+                raise ValueError('New password does not meet security requirements')
+            
+            hashed_password = self.hash_password(new_password)
+            mongo.db.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'password': hashed_password}}
+            )
+            
+            return True
+        except Exception as e:
+            logger.error(f"Change password error: {str(e)}")
+            raise

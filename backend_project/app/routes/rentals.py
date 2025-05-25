@@ -10,10 +10,18 @@ rentals_bp = Blueprint('rentals', __name__)
 @rentals_bp.route('/cars/page', methods=['GET'])
 def cars_page():
     try:
+        # Get tokens from URL parameters if they exist
+        access_token = request.args.get('access_token')
+        refresh_token = request.args.get('refresh_token')
+        
         cars = list(mongo.db.cars.find({'available': True}))
         for car in cars:
             car['_id'] = str(car['_id'])
-        return render_template('cars.html', cars=cars)
+            
+        return render_template('cars.html', 
+            cars=cars,
+            access_token=access_token,
+            refresh_token=refresh_token)
     except Exception as e:
         return render_template('cars.html', cars=[])
 

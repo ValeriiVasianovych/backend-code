@@ -7,109 +7,150 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .nav-link {
+            font-weight: 500;
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .footer {
+            margin-top: auto;
+            padding: 2rem 0;
             background-color: #f8f9fa;
+        }
+        body {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        .navbar {
-            background-color: #343a40;
-        }
-        .navbar-brand, .nav-link {
-            color: white !important;
-        }
         .main-content {
             flex: 1;
-            padding: 2rem 0;
         }
-        .auth-form {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        .auth-buttons .btn {
+            margin-left: 0.5rem;
         }
-        .error-message {
-            color: #dc3545;
-            margin-top: 0.5rem;
-        }
-        .success-message {
-            color: #28a745;
-            margin-top: 0.5rem;
+        @media (max-width: 768px) {
+            .auth-buttons {
+                margin-top: 1rem;
+            }
+            .auth-buttons .btn {
+                margin-left: 0;
+                margin-top: 0.5rem;
+                display: block;
+                width: 100%;
+            }
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">Car Rental</a>
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="fas fa-car-side text-primary"></i> CarRental
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if current_user and current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="logout()">Logout</a>
-                        </li>
-                    {% else %}
-                    {% endif %}
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.index') }}">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('rentals.cars_page') }}">
+                            <i class="fas fa-car"></i> Cars
+                        </a>
+                    </li>
                 </ul>
+                <div class="auth-buttons" id="authButtons">
+                    <!-- Will be populated by JavaScript -->
+                </div>
             </div>
         </div>
     </nav>
 
     <div class="main-content">
-        <div class="container">
-            {% block content %}{% endblock %}
-        </div>
+        {% block content %}{% endblock %}
     </div>
+
+    <footer class="footer mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>CarRental Service</h5>
+                    <p class="text-muted">Your trusted partner in car rentals.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('main.index') }}" class="text-decoration-none">Home</a></li>
+                        <li><a href="{{ url_for('rentals.cars_page') }}" class="text-decoration-none">Available Cars</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contact Us</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope"></i> support@carrental.com</li>
+                        <li><i class="fas fa-phone"></i> +1 234 567 890</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function updateAuthButtons() {
+            const authButtons = document.getElementById('authButtons');
+            const accessToken = localStorage.getItem('access_token');
+            
+            if (accessToken) {
+                authButtons.innerHTML = `
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i> My Account
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                <i class="fas fa-user"></i> Profile
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                `;
+            } else {
+                authButtons.innerHTML = `
+                    <a href="{{ url_for('auth.login_page') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="{{ url_for('auth.register_page') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Register
+                    </a>
+                `;
+            }
+        }
+
         function logout() {
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
-            window.location.href = "{{ url_for('auth.login_page') }}";
+            window.location.href = "{{ url_for('main.index') }}";
         }
 
-        // Add token to all fetch requests
-        function getAuthHeader() {
-            const token = localStorage.getItem('access_token');
-            return token ? { 'Authorization': `Bearer ${token}` } : {};
-        }
-
-        // Handle token refresh
-        async function refreshToken() {
-            const refresh_token = localStorage.getItem('refresh_token');
-            if (!refresh_token) return false;
-
-            try {
-                const response = await fetch('/auth/refresh', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ refresh_token })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    localStorage.setItem('access_token', data.tokens.access_token);
-                    localStorage.setItem('refresh_token', data.tokens.refresh_token);
-                    return true;
-                }
-            } catch (error) {
-                console.error('Token refresh failed:', error);
-            }
-            return false;
-        }
+        // Check auth status on page load
+        document.addEventListener('DOMContentLoaded', updateAuthButtons);
     </script>
     {% block extra_js %}{% endblock %}
 </body>

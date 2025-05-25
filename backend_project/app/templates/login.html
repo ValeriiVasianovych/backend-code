@@ -12,7 +12,7 @@
                 </div>
                 <div class="card-body">
                     <div id="error-message" class="alert alert-danger" style="display: none;"></div>
-                    <form id="loginForm">
+                    <form id="loginForm" method="POST" action="{{ url_for('auth.login') }}">
                         <div class="form-group mb-3">
                             <label for="email">Email</label>
                             <input type="email" class="form-control" id="email" name="email" required>
@@ -41,38 +41,38 @@
 </div>
 
 <script>
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
     const errorMessage = document.getElementById('error-message');
     errorMessage.style.display = 'none';
     
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    const formData = new FormData(this);
+    const data = {
+        email: formData.get('email'),
+        password: formData.get('password')
+    };
     
-    try {
-        const response = await fetch('/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.status === 'success') {
-            localStorage.setItem('access_token', data.tokens.access_token);
-            localStorage.setItem('refresh_token', data.tokens.refresh_token);
-            window.location.href = '/cars/page';
+    fetch('{{ url_for("auth.login") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
         } else {
-            errorMessage.textContent = data.error || 'Login failed';
-            errorMessage.style.display = 'block';
+            return response.json().then(data => {
+                throw new Error(data.error || 'Login failed');
+            });
         }
-    } catch (error) {
-        errorMessage.textContent = 'An error occurred during login';
+    })
+    .catch(error => {
+        errorMessage.textContent = error.message;
         errorMessage.style.display = 'block';
-    }
+    });
 });
 </script>
 {% endblock %} 

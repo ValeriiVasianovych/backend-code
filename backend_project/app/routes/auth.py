@@ -67,11 +67,10 @@ def register():
         user = auth_service.create_user(email, password)
         tokens = auth_service.generate_tokens(user['_id'])
         
-        return jsonify({
-            'message': 'User successfully registered',
-            'status': 'success',
-            'tokens': tokens
-        }), 201
+        # Redirect to cars page with tokens
+        return redirect(url_for('rentals.cars_page', 
+            access_token=tokens['access_token'],
+            refresh_token=tokens['refresh_token']))
         
     except ValueError as e:
         return jsonify({'error': str(e), 'status': 'error'}), 400
@@ -101,11 +100,10 @@ def login():
             
         tokens = auth_service.generate_tokens(user['_id'])
         
-        return jsonify({
-            'message': 'Login successful',
-            'status': 'success',
-            'tokens': tokens
-        }), 200
+        # Redirect to cars page with tokens
+        return redirect(url_for('rentals.cars_page', 
+            access_token=tokens['access_token'],
+            refresh_token=tokens['refresh_token']))
         
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
@@ -208,12 +206,69 @@ def github_callback():
         # Generate JWT tokens
         tokens = auth_service.generate_tokens(user['_id'])
         
-        return jsonify({
-            'message': 'GitHub login successful',
-            'status': 'success',
-            'tokens': tokens
-        }), 200
+        # Redirect to cars page with tokens
+        return redirect(url_for('rentals.cars_page', 
+            access_token=tokens['access_token'],
+            refresh_token=tokens['refresh_token']))
         
     except Exception as e:
         logger.error(f"GitHub callback error: {str(e)}")
         return redirect(url_for('main.index', message=str(e)))
+
+@auth_bp.route('/profile')
+@token_required
+def profile(current_user):
+    try:
+        # Get user's rental history
+        rentals = list(mongo.db.rentals.find(
+            {'user_id': current_user['_id']},
+            {'_id': 1, 'car_id': 1, 'start_date': 1, 'end_date': 1, 'total_price': 1, 'status': 1}
+        ).sort('start_date', -1))
+
+        # Get car details for each rental
+        for rental in rentals:
+            rental['_id'] = str(rental['_id'])
+            car = mongo.db.cars.find_one({'_id': ObjectId(rental['car_id'])})
+            if car:
+                rental['car'] = {
+                    'brand': car['brand'],
+                    'model': car['model'],
+                    'year': car['year']
+                }
+            rental['start_date'] = rental['start_date'].strftime('%Y-%m-%d')
+            rental['end_date'] = rental['end_date'].strftime('%Y-%m-%d')
+
+        return render_template('profile.html', 
+            user=current_user,
+            rentals=rentals
+        )
+    except Exception as e:
+        logger.error(f"Profile error: {str(e)}")
+        return redirect(url_for('main.index'))
+
+@auth_bp.route('/change-password', methods=['POST'])
+@token_required
+def change_password(current_user):
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided', 'status': 'error'}), 400
+
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        if not all([current_password, new_password]):
+            return jsonify({'error': 'Required fields are missing', 'status': 'error'}), 400
+            
+        auth_service.change_password(current_user['_id'], current_password, new_password)
+        
+        return jsonify({
+            'message': 'Password changed successfully',
+            'status': 'success'
+        }), 200
+        
+    except ValueError as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 400
+    except Exception as e:
+        logger.error(f"Change password error: {str(e)}")
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500

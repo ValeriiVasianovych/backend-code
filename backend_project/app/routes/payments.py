@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, render_template, url_for
+from flask import Blueprint, jsonify, request, render_template, url_for, redirect
 from app.extensions import mongo
 from app.utils.decorators import token_required
 from bson import ObjectId
@@ -63,8 +63,8 @@ def success():
             session = stripe.checkout.Session.retrieve(session_id)
             return render_template('success.html', session=session)
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    return redirect(url_for('main.index'))
+            return redirect(url_for('rentals.cars_page'))
+    return redirect(url_for('rentals.cars_page'))
 
 @payments_bp.route('/cancel')
 def cancel():
