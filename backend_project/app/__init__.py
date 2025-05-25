@@ -49,11 +49,15 @@ def create_app(config_class=Config):
     from app.routes.auth import auth_bp
     from app.routes.main import main_bp
     from app.routes.rentals import rentals_bp
+    from app.routes.users import users_bp
+    from app.routes.cars import cars_bp
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(main_bp)
     app.register_blueprint(rentals_bp, url_prefix='/rentals')
     app.register_blueprint(payments_bp, url_prefix='/payments')
+    app.register_blueprint(users_bp, url_prefix='/api')
+    app.register_blueprint(cars_bp, url_prefix='/api')
 
     # Register error handlers
     app.register_error_handler(Exception, handle_error)

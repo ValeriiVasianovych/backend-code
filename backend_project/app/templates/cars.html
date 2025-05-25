@@ -34,17 +34,21 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Body Type</label>
-                    <select class="form-select" id="bodyTypeFilter">
-                        <option value="">All Types</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
                     <label class="form-label">Transmission</label>
                     <select class="form-select" id="transmissionFilter">
                         <option value="">All</option>
                         <option value="Automatic">Automatic</option>
                         <option value="Manual">Manual</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fuel Type</label>
+                    <select class="form-select" id="fuelTypeFilter">
+                        <option value="">All</option>
+                        <option value="Petrol">Petrol</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Hybrid">Hybrid</option>
+                        <option value="Electric">Electric</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -62,18 +66,18 @@
         {% for car in cars %}
         <div class="col car-card" 
              data-brand="{{ car.brand }}"
-             data-body-type="{{ car.body_type }}"
              data-transmission="{{ car.transmission }}"
-             data-price="{{ car.rental_price_per_day }}"
+             data-fuel-type="{{ car.fuel_type }}"
+             data-price="{{ car.price_per_day }}"
              data-year="{{ car.year }}">
             <div class="card h-100 shadow-sm hover-shadow">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
                             <h5 class="card-title mb-1">{{ car.brand }} {{ car.model }}</h5>
-                            <h6 class="card-subtitle text-muted">{{ car.year }} • {{ car.color }}</h6>
+                            <h6 class="card-subtitle text-muted">{{ car.year }}</h6>
                         </div>
-                        <span class="badge bg-primary">{{ car.body_type }}</span>
+                        <span class="badge bg-primary">{{ car.transmission }}</span>
                     </div>
 
                     <div class="car-specs">
@@ -87,7 +91,7 @@
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Engine:</span>
-                            <span class="fw-bold">{{ car.engine_volume }}L / {{ car.engine_power }}hp</span>
+                            <span class="fw-bold">{{ car.engine }}</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Mileage:</span>
@@ -106,11 +110,16 @@
                 <div class="card-footer bg-white border-top-0">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <span class="h4 mb-0">${{ car.rental_price_per_day }}</span>
+                            <span class="h4 mb-0">${{ car.price_per_day }}</span>
                             <span class="text-muted">/day</span>
                         </div>
+                        {% if car.available %}
                         <span class="badge bg-success">Available</span>
+                        {% else %}
+                        <span class="badge bg-danger">Not Available</span>
+                        {% endif %}
                     </div>
+                    {% if car.available %}
                     <div class="rental-controls">
                         <div class="input-group mb-3">
                             <input type="number" class="form-control" id="rental-days-{{ car._id }}" value="1" min="1" max="30">
@@ -120,6 +129,11 @@
                             <i class="fas fa-car-side"></i> Rent Now
                         </button>
                     </div>
+                    {% else %}
+                    <button class="btn btn-secondary w-100" disabled>
+                        <i class="fas fa-times"></i> Not Available
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -144,21 +158,11 @@ document.addEventListener('DOMContentLoaded', function() {
         brandFilter.appendChild(option);
     });
 
-    // Populate body type filter
-    const bodyTypes = [...new Set(Array.from(document.querySelectorAll('.car-card')).map(card => card.dataset.bodyType))];
-    const bodyTypeFilter = document.getElementById('bodyTypeFilter');
-    bodyTypes.sort().forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type;
-        bodyTypeFilter.appendChild(option);
-    });
-
     // Add event listeners for filters
     document.getElementById('sortSelect').addEventListener('change', filterAndSortCars);
     document.getElementById('brandFilter').addEventListener('change', filterAndSortCars);
-    document.getElementById('bodyTypeFilter').addEventListener('change', filterAndSortCars);
     document.getElementById('transmissionFilter').addEventListener('change', filterAndSortCars);
+    document.getElementById('fuelTypeFilter').addEventListener('change', filterAndSortCars);
     document.getElementById('minPrice').addEventListener('input', filterAndSortCars);
     document.getElementById('maxPrice').addEventListener('input', filterAndSortCars);
 });
@@ -166,8 +170,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function filterAndSortCars() {
     const cars = Array.from(document.querySelectorAll('.car-card'));
     const brand = document.getElementById('brandFilter').value;
-    const bodyType = document.getElementById('bodyTypeFilter').value;
     const transmission = document.getElementById('transmissionFilter').value;
+    const fuelType = document.getElementById('fuelTypeFilter').value;
     const minPrice = document.getElementById('minPrice').value;
     const maxPrice = document.getElementById('maxPrice').value;
     const sortBy = document.getElementById('sortSelect').value;
@@ -175,12 +179,12 @@ function filterAndSortCars() {
     // Filter cars
     cars.forEach(car => {
         const matchesBrand = !brand || car.dataset.brand === brand;
-        const matchesBodyType = !bodyType || car.dataset.bodyType === bodyType;
         const matchesTransmission = !transmission || car.dataset.transmission === transmission;
+        const matchesFuelType = !fuelType || car.dataset.fuelType === fuelType;
         const matchesMinPrice = !minPrice || parseFloat(car.dataset.price) >= parseFloat(minPrice);
         const matchesMaxPrice = !maxPrice || parseFloat(car.dataset.price) <= parseFloat(maxPrice);
 
-        car.style.display = matchesBrand && matchesBodyType && matchesTransmission && matchesMinPrice && matchesMaxPrice ? '' : 'none';
+        car.style.display = matchesBrand && matchesTransmission && matchesFuelType && matchesMinPrice && matchesMaxPrice ? '' : 'none';
     });
 
     // Sort cars

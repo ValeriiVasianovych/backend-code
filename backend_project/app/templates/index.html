@@ -11,10 +11,7 @@
                 {{ request.args.get('message') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-            {% endif %}
-            
-            <h1 class="display-4 mb-4">Welcome to Car Rental Service</h1>
-            
+            {% endif %}            
             {% if current_user and current_user.is_authenticated %}
                 <div class="card mb-4">
                     <div class="card-body">
@@ -25,13 +22,33 @@
                     </div>
                 </div>
             {% else %}
-                <div class="card">
+                <div class="card" style="margin-top: 80px;">
                     <div class="card-body">
-                        <h5 class="card-title">Get Started</h5>
-                        <p class="card-text">Please login or register to view and rent cars.</p>
-                        <div class="d-grid gap-2 d-md-block">
-                            <a href="{{ url_for('auth.login_page') }}" class="btn btn-primary me-md-2">Login</a>
-                            <a href="{{ url_for('auth.register_page') }}" class="btn btn-outline-primary">Register</a>
+                        <p class="card-text">
+                            Experience the freedom of the open road with our premium car rental service. We offer a wide selection of vehicles to suit your needs, from compact cars to luxury sedans.
+                        </p>
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="text-center mb-3">
+                                    <i class="fas fa-car-side text-primary" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2">Wide Selection</h6>
+                                    <p class="text-muted small">Choose from our diverse fleet of vehicles</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center mb-3">
+                                    <i class="fas fa-dollar-sign text-primary" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2">Best Prices</h6>
+                                    <p class="text-muted small">Competitive rates and transparent pricing</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center mb-3">
+                                    <i class="fas fa-shield-alt text-primary" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2">Secure Booking</h6>
+                                    <p class="text-muted small">Safe and easy online reservation system</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

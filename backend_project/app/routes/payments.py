@@ -23,8 +23,8 @@ def create_checkout_session(current_user):
         if not car:
             return jsonify({'error': 'Car not found'}), 404
 
-        # Calculate total price
-        total_price = car['rental_price_per_day'] * rental_days
+        # Calculate total price using price_per_day
+        total_price = car['price_per_day'] * rental_days
 
         # Create Stripe checkout session
         checkout_session = stripe.checkout.Session.create(

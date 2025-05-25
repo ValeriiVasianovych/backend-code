@@ -215,37 +215,6 @@ def github_callback():
         logger.error(f"GitHub callback error: {str(e)}")
         return redirect(url_for('main.index', message=str(e)))
 
-@auth_bp.route('/profile')
-@token_required
-def profile(current_user):
-    try:
-        # Get user's rental history
-        rentals = list(mongo.db.rentals.find(
-            {'user_id': current_user['_id']},
-            {'_id': 1, 'car_id': 1, 'start_date': 1, 'end_date': 1, 'total_price': 1, 'status': 1}
-        ).sort('start_date', -1))
-
-        # Get car details for each rental
-        for rental in rentals:
-            rental['_id'] = str(rental['_id'])
-            car = mongo.db.cars.find_one({'_id': ObjectId(rental['car_id'])})
-            if car:
-                rental['car'] = {
-                    'brand': car['brand'],
-                    'model': car['model'],
-                    'year': car['year']
-                }
-            rental['start_date'] = rental['start_date'].strftime('%Y-%m-%d')
-            rental['end_date'] = rental['end_date'].strftime('%Y-%m-%d')
-
-        return render_template('profile.html', 
-            user=current_user,
-            rentals=rentals
-        )
-    except Exception as e:
-        logger.error(f"Profile error: {str(e)}")
-        return redirect(url_for('main.index'))
-
 @auth_bp.route('/change-password', methods=['POST'])
 @token_required
 def change_password(current_user):

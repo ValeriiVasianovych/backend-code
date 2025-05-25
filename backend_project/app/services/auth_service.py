@@ -34,22 +34,30 @@ class AuthService:
         return mongo.db.users.find_one({'email': email})
         
     def generate_tokens(self, user_id):
+        # Get user data to include email
+        user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
+        if not user:
+            raise ValueError("User not found")
+            
         access_token = self._generate_token(
             user_id,
-            Config.JWT_ACCESS_TOKEN_EXPIRES
+            Config.JWT_ACCESS_TOKEN_EXPIRES,
+            user['email']
         )
         refresh_token = self._generate_token(
             user_id,
-            Config.JWT_REFRESH_TOKEN_EXPIRES
+            Config.JWT_REFRESH_TOKEN_EXPIRES,
+            user['email']
         )
         return {
             'access_token': access_token,
             'refresh_token': refresh_token
         }
         
-    def _generate_token(self, user_id, expires_delta):
+    def _generate_token(self, user_id, expires_delta, email):
         payload = {
             'user_id': str(user_id),
+            'email': email,
             'exp': datetime.utcnow() + expires_delta,
             'iat': datetime.utcnow()
         }

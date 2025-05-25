@@ -25,12 +25,18 @@ def get_current_user():
 
 @main_bp.route('/')
 def index():
+    # Initialize sample cars if none exist
     try:
         current_user = get_current_user()
         return render_template('index.html', current_user=current_user)
     except Exception as e:
         return jsonify({'error': 'Internal server error'}), 500
 
+@main_bp.route('/cars')
+def cars():
+    from app.models.car import Car
+    cars = Car.get_all()
+    return render_template('cars.html', cars=cars)
 
 # {
 #     "email": "asdsad@asfafa.com",

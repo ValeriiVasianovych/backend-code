@@ -93,15 +93,14 @@
                 <div class="col-md-4">
                     <h5>Quick Links</h5>
                     <ul class="list-unstyled">
-                        <li><a href="{{ url_for('main.index') }}" class="text-decoration-none">Home</a></li>
                         <li><a href="{{ url_for('rentals.cars_page') }}" class="text-decoration-none">Available Cars</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
                     <h5>Contact Us</h5>
                     <ul class="list-unstyled">
-                        <li><i class="fas fa-envelope"></i> support@carrental.com</li>
-                        <li><i class="fas fa-phone"></i> +1 234 567 890</li>
+                        <li><i class="fas fa-envelope"></i> s094215@student.tu.kielce.pl</li>
+                        <li><i class="fas fa-phone"></i> +(48) 777 555 333</li>
                     </ul>
                 </div>
             </div>
@@ -115,16 +114,16 @@
             const accessToken = localStorage.getItem('access_token');
             
             if (accessToken) {
+                // Decode the JWT token to get user info
+                const tokenParts = accessToken.split('.');
+                const payload = JSON.parse(atob(tokenParts[1]));
+                
                 authButtons.innerHTML = `
                     <div class="dropdown">
                         <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle"></i> My Account
+                            <i class="fas fa-user-circle"></i> ${payload.email}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
-                                <i class="fas fa-user"></i> Profile
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="logout()">
                                 <i class="fas fa-sign-out-alt"></i> Logout
                             </a></li>

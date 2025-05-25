@@ -32,6 +32,10 @@ class User:
         return mongo.db.users.find_one({"github_id": github_id})
 
     @staticmethod
+    def find_by_id(user_id):
+        return mongo.db.users.find_one({"_id": user_id})
+
+    @staticmethod
     def update_github_token(username, access_token):
         mongo.db.users.update_one(
             {"username": username},
@@ -52,4 +56,9 @@ class User:
     @staticmethod
     def delete_user(username):
         result = mongo.db.users.delete_one({"username": username})
+        return result
+
+    @staticmethod
+    def delete_user_by_id(user_id):
+        result = mongo.db.users.delete_one({"_id": user_id})
         return result
