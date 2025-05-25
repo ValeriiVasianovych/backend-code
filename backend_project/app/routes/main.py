@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template
-from app.utils.decorators import token_required
+from app.utils.decorators import token_required, get_current_user
 from functools import wraps
 from flask import request, jsonify
 import jwt
@@ -25,8 +25,11 @@ def get_current_user():
 
 @main_bp.route('/')
 def index():
-    current_user = get_current_user()
-    return render_template('index.html', current_user=current_user)
+    try:
+        current_user = get_current_user()
+        return render_template('index.html', current_user=current_user)
+    except Exception as e:
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 # {

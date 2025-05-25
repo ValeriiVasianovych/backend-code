@@ -3,62 +3,76 @@
 {% block title %}Login - Car Rental Service{% endblock %}
 
 {% block content %}
-<div class="auth-form">
-    <h2 class="text-center mb-4">Login</h2>
-    <div id="error-message" class="error-message text-center" style="display: none;"></div>
-    <form id="login-form" onsubmit="handleLogin(event)">
-        <div class="mb-3">
-            <label for="email" class="form-label">Email address</label>
-            <input type="email" class="form-control" id="email" name="email" required>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Login</h3>
+                </div>
+                <div class="card-body">
+                    <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+                    <form id="loginForm" method="POST" action="{{ url_for('auth.login') }}">
+                        <div class="form-group mb-3">
+                            <label for="email">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="form-group mt-3">
+                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                        </div>
+                    </form>
+                    <div class="mt-3 text-center">
+                        <p>Or login with:</p>
+                        <a href="{{ url_for('auth.github_login') }}" class="btn btn-dark">
+                            <i class="fab fa-github"></i> Login with GitHub
+                        </a>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <p>Don't have an account? <a href="{{ url_for('auth.register_page') }}">Register</a></p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Login</button>
-    </form>
-    <div class="text-center mt-3">
-        <p>Don't have an account? <a href="{{ url_for('auth.register_page') }}">Register here</a></p>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-async function handleLogin(event) {
-    event.preventDefault();
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
     const errorMessage = document.getElementById('error-message');
     errorMessage.style.display = 'none';
-
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    try {
-        const response = await fetch('/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // Store tokens
-            localStorage.setItem('access_token', data.tokens.access_token);
-            localStorage.setItem('refresh_token', data.tokens.refresh_token);
-            
-            // Redirect to cars page
-            window.location.href = "{{ url_for('rentals.cars_page') }}";
+    
+    const formData = new FormData(this);
+    const data = {
+        email: formData.get('email'),
+        password: formData.get('password')
+    };
+    
+    fetch('{{ url_for("auth.login") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
         } else {
-            errorMessage.textContent = data.error || 'Login failed';
-            errorMessage.style.display = 'block';
+            return response.json().then(data => {
+                throw new Error(data.error || 'Login failed');
+            });
         }
-    } catch (error) {
-        errorMessage.textContent = 'An error occurred. Please try again.';
+    })
+    .catch(error => {
+        errorMessage.textContent = error.message;
         errorMessage.style.display = 'block';
-    }
-}
+    });
+});
 </script>
 {% endblock %} 
