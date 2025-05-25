@@ -1,98 +1,83 @@
 import requests
-from flask import current_app
+from app.config import Config
 from app.extensions import mongo
-from datetime import datetime
-from bson import ObjectId
+from app.utils.error_handlers import ServiceError
+import secrets
 
 class GitHubService:
     @staticmethod
-    def get_github_auth_url():
-        client_id = current_app.config['GITHUB_CLIENT_ID']
-        redirect_uri = current_app.config['GITHUB_REDIRECT_URI']
-        return f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=user:email"
+    def get_authorization_url():
+        state = secrets.token_hex(16)
+        params = {
+            'client_id': Config.GITHUB_CLIENT_ID,
+            'redirect_uri': Config.GITHUB_CALLBACK_URL,
+            'scope': 'user:email,read:user',
+            'state': state
+        }
+        return f"https://github.com/login/oauth/authorize?{'&'.join(f'{k}={v}' for k, v in params.items())}", state
 
     @staticmethod
-    def get_github_token(code):
-        client_id = current_app.config['GITHUB_CLIENT_ID']
-        client_secret = current_app.config['GITHUB_CLIENT_SECRET']
-        redirect_uri = current_app.config['GITHUB_REDIRECT_URI']
-        
+    def get_access_token(code):
         response = requests.post(
             'https://github.com/login/oauth/access_token',
             data={
-                'client_id': client_id,
-                'client_secret': client_secret,
+                'client_id': Config.GITHUB_CLIENT_ID,
+                'client_secret': Config.GITHUB_CLIENT_SECRET,
                 'code': code,
-                'redirect_uri': redirect_uri
+                'redirect_uri': Config.GITHUB_CALLBACK_URL
             },
             headers={'Accept': 'application/json'}
         )
         
-        if response.status_code == 200:
-            return response.json().get('access_token')
-        return None
+        if response.status_code != 200:
+            raise ServiceError('Failed to get access token from GitHub', 400)
+            
+        data = response.json()
+        if 'error' in data:
+            raise ServiceError(f"GitHub error: {data['error_description']}", 400)
+            
+        return data['access_token']
 
     @staticmethod
-    def get_github_user(access_token):
-        response = requests.get(
-            'https://api.github.com/user',
-            headers={
-                'Authorization': f'token {access_token}',
-                'Accept': 'application/json'
-            }
-        )
+    def get_user_data(access_token):
+        headers = {'Authorization': f'token {access_token}'}
+        response = requests.get('https://api.github.com/user', headers=headers)
         
-        if response.status_code == 200:
-            return response.json()
-        return None
+        if response.status_code != 200:
+            raise ServiceError('Failed to get user data from GitHub', 400)
+            
+        user_data = response.json()
+        
+        # Get user email
+        email_response = requests.get('https://api.github.com/user/emails', headers=headers)
+        if email_response.status_code == 200:
+            emails = email_response.json()
+            primary_email = next((email['email'] for email in emails if email['primary']), None)
+            if primary_email:
+                user_data['email'] = primary_email
+        
+        return user_data
 
     @staticmethod
-    def get_github_emails(access_token):
-        response = requests.get(
-            'https://api.github.com/user/emails',
-            headers={
-                'Authorization': f'token {access_token}',
-                'Accept': 'application/json'
-            }
-        )
+    def create_or_update_user(github_data, access_token):
+        user = {
+            'github_id': github_data['id'],
+            'email': github_data.get('email'),
+            'name': github_data.get('name'),
+            'login': github_data.get('login'),
+            'avatar_url': github_data.get('avatar_url'),
+            'github_access_token': access_token
+        }
         
-        if response.status_code == 200:
-            return response.json()
-        return []
-
-    @staticmethod
-    def create_or_update_user(github_user, emails):
-        primary_email = next((email['email'] for email in emails if email['primary']), None)
-        if not primary_email:
-            return None
-
-        user = mongo.db.users.find_one({'email': primary_email})
-        
-        if not user:
-            user = {
-                'email': primary_email,
-                'github_id': github_user['id'],
-                'username': github_user['login'],
-                'name': github_user.get('name', ''),
-                'avatar_url': github_user.get('avatar_url', ''),
-                'created_at': datetime.utcnow(),
-                'is_active': True
-            }
+        existing_user = mongo.db.users.find_one({'github_id': github_data['id']})
+        if existing_user:
+            mongo.db.users.update_one(
+                {'github_id': github_data['id']},
+                {'$set': user}
+            )
+            user['_id'] = existing_user['_id']
+        else:
             result = mongo.db.users.insert_one(user)
             user['_id'] = result.inserted_id
-        else:
-            # Update existing user with latest GitHub data
-            mongo.db.users.update_one(
-                {'_id': user['_id']},
-                {
-                    '$set': {
-                        'github_id': github_user['id'],
-                        'username': github_user['login'],
-                        'name': github_user.get('name', ''),
-                        'avatar_url': github_user.get('avatar_url', '')
-                    }
-                }
-            )
-            user = mongo.db.users.find_one({'_id': user['_id']})
-
+            
         return user 

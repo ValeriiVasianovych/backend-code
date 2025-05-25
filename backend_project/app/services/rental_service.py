@@ -1,6 +1,9 @@
 from flask import jsonify
 from app.models.rental import Rental
 from app.utils.validators import validate_rental_data
+from app.extensions import mongo
+from bson import ObjectId
+from datetime import datetime
 
 class RentalService:
     @staticmethod
@@ -52,3 +55,65 @@ class RentalService:
         if result.deleted_count:
             return jsonify({"message": "Rental deleted successfully"}), 200
         return jsonify({"error": "Rental not found"}), 404
+
+    @staticmethod
+    def add_car(car_data):
+        try:
+            car_data['created_at'] = datetime.utcnow()
+            car_data['updated_at'] = datetime.utcnow()
+            
+            result = mongo.db.cars.insert_one(car_data)
+            car_data['_id'] = str(result.inserted_id)
+            
+            return jsonify({
+                'message': 'Car added successfully',
+                'car': car_data
+            }), 201
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @staticmethod
+    def get_all_cars():
+        try:
+            cars = list(mongo.db.cars.find())
+            for car in cars:
+                car['_id'] = str(car['_id'])
+            return jsonify({'cars': cars}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @staticmethod
+    def update_car(car_id, car_data):
+        try:
+            car = mongo.db.cars.find_one({'_id': ObjectId(car_id)})
+            
+            if not car:
+                return jsonify({'error': 'Car not found'}), 404
+                
+            car_data['updated_at'] = datetime.utcnow()
+            mongo.db.cars.update_one(
+                {'_id': ObjectId(car_id)},
+                {'$set': car_data}
+            )
+            
+            updated_car = mongo.db.cars.find_one({'_id': ObjectId(car_id)})
+            updated_car['_id'] = str(updated_car['_id'])
+            
+            return jsonify({
+                'message': 'Car updated successfully',
+                'car': updated_car
+            }), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @staticmethod
+    def delete_car(car_id):
+        try:
+            result = mongo.db.cars.delete_one({'_id': ObjectId(car_id)})
+            
+            if result.deleted_count == 0:
+                return jsonify({'error': 'Car not found'}), 404
+                
+            return jsonify({'message': 'Car deleted successfully'}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
