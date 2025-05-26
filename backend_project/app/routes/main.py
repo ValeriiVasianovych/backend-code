@@ -37,8 +37,3 @@ def cars():
     from app.models.car import Car
     cars = Car.get_all()
     return render_template('cars.html', cars=cars)
-
-# {
-#     "email": "asdsad@asfafa.com",
-#     "password": "affafs2Sdddd@"
-# }

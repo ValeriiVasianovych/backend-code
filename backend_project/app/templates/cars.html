@@ -141,14 +141,11 @@
     </div>
 </div>
 
-<!-- Stripe Script -->
 <script src="https://js.stripe.com/v3/"></script>
 <script>
 const stripe = Stripe('{{ stripe_public_key }}');
 
-// Initialize filters
 document.addEventListener('DOMContentLoaded', function() {
-    // Populate brand filter
     const brands = [...new Set(Array.from(document.querySelectorAll('.car-card')).map(card => card.dataset.brand))];
     const brandFilter = document.getElementById('brandFilter');
     brands.sort().forEach(brand => {
@@ -158,7 +155,6 @@ document.addEventListener('DOMContentLoaded', function() {
         brandFilter.appendChild(option);
     });
 
-    // Add event listeners for filters
     document.getElementById('sortSelect').addEventListener('change', filterAndSortCars);
     document.getElementById('brandFilter').addEventListener('change', filterAndSortCars);
     document.getElementById('transmissionFilter').addEventListener('change', filterAndSortCars);
@@ -176,7 +172,6 @@ function filterAndSortCars() {
     const maxPrice = document.getElementById('maxPrice').value;
     const sortBy = document.getElementById('sortSelect').value;
 
-    // Filter cars
     cars.forEach(car => {
         const matchesBrand = !brand || car.dataset.brand === brand;
         const matchesTransmission = !transmission || car.dataset.transmission === transmission;
@@ -187,7 +182,6 @@ function filterAndSortCars() {
         car.style.display = matchesBrand && matchesTransmission && matchesFuelType && matchesMinPrice && matchesMaxPrice ? '' : 'none';
     });
 
-    // Sort cars
     const container = document.getElementById('carsContainer');
     const sortedCars = cars.filter(car => car.style.display !== 'none').sort((a, b) => {
         switch(sortBy) {
@@ -248,7 +242,6 @@ async function rentCar(carId) {
     }
 }
 
-// Handle tokens from URL parameters
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('access_token');
@@ -257,7 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (accessToken && refreshToken) {
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('refresh_token', refreshToken);
-        // Remove tokens from URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 });

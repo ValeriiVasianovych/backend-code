@@ -48,7 +48,6 @@ class GitHubService:
             
         user_data = response.json()
         
-        # Get user email
         email_response = requests.get('https://api.github.com/user/emails', headers=headers)
         if email_response.status_code == 200:
             emails = email_response.json()

@@ -17,7 +17,6 @@
                     <div class="card-body">
                         <h5 class="card-title">Available Cars</h5>
                         <div id="cars-list" class="row">
-                            <!-- Cars will be loaded here dynamically -->
                         </div>
                     </div>
                 </div>
@@ -91,7 +90,6 @@ async function loadCars() {
                 carsList.innerHTML += carCard;
             });
         } else if (response.status === 401) {
-            // Try to refresh token
             const refreshed = await refreshToken();
             if (refreshed) {
                 loadCars(); // Retry loading cars
@@ -134,7 +132,6 @@ async function rentCar(carId) {
     }
 }
 
-// Load cars when the page loads
 document.addEventListener('DOMContentLoaded', loadCars);
 </script>
 {% endif %}

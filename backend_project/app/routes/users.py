@@ -10,7 +10,6 @@ def create_user():
     if not all(k in data for k in ["username", "email", "password"]):
         return jsonify({"error": "Missing required fields"}), 400
     
-    # Check if user already exists
     if User.find_by_username(data["username"]):
         return jsonify({"error": "Username already exists"}), 400
     if User.find_by_email(data["email"]):
@@ -22,7 +21,6 @@ def create_user():
 @users_bp.route('/users', methods=['GET'])
 def get_users():
     users = User.get_all_users()
-    # Convert ObjectId to string for JSON serialization
     for user in users:
         user['_id'] = str(user['_id'])
     return jsonify(users)
@@ -33,7 +31,6 @@ def get_user(user_id):
         user = User.find_by_id(ObjectId(user_id))
         if user:
             user['_id'] = str(user['_id'])
-            # Remove sensitive information
             user.pop('password', None)
             user.pop('refresh_tokens', None)
             return jsonify(user)
@@ -45,7 +42,6 @@ def get_user(user_id):
 def update_user(user_id):
     try:
         data = request.get_json()
-        # Don't allow updating sensitive fields through this endpoint
         data.pop('password', None)
         data.pop('refresh_tokens', None)
         
@@ -53,7 +49,6 @@ def update_user(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
         
-        # Update user fields
         update_data = {k: v for k, v in data.items() if v is not None}
         mongo.db.users.update_one(
             {"_id": ObjectId(user_id)},

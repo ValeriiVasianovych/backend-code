@@ -10,7 +10,6 @@ rentals_bp = Blueprint('rentals', __name__)
 @rentals_bp.route('/cars/page', methods=['GET'])
 def cars_page():
     try:
-        # Get tokens from URL parameters if they exist
         access_token = request.args.get('access_token')
         refresh_token = request.args.get('refresh_token')
         
@@ -34,7 +33,7 @@ def get_cars():
     except Exception as e:
         return jsonify({'error': 'Internal server error'}), 500
 
-# Add a new car (available to all users)
+# Add a new car
 @rentals_bp.route('/api/cars', methods=['POST'])
 @token_required
 def add_car(current_user):

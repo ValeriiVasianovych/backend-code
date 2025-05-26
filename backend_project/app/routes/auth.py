@@ -194,16 +194,9 @@ def github_callback():
         return redirect(url_for('main.index', message='No authorization code provided'))
         
     try:
-        # Get access token
         access_token = github_service.get_access_token(code)
-        
-        # Get user data
         github_data = github_service.get_user_data(access_token)
-        
-        # Create or update user
         user = github_service.create_or_update_user(github_data, access_token)
-        
-        # Generate JWT tokens
         tokens = auth_service.generate_tokens(user['_id'])
         
         # Redirect to cars page with tokens

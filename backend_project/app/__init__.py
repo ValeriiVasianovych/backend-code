@@ -17,24 +17,19 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Load configuration before MongoDB initialization
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['MONGO_URI'] = f"mongodb+srv://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@flaskdb.2ttjd.mongodb.net/car_rental?retryWrites=true&w=majority&appName=FlaskDB"
     
-    # Configure logging
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     
     try:
-        # MongoDB initialization
         mongo.init_app(app)
         
-        # Test the connection with a ping
         mongo.db.command('ping')
         logger.info("Successfully connected to MongoDB")
         logger.info("Connection Status: Active")
         
-        # Print ASCII banner only after successful connection
         ascii_banner = pyfiglet.figlet_format("Car Rentals API")
         print(ascii_banner)
         
@@ -59,7 +54,6 @@ def create_app(config_class=Config):
     app.register_blueprint(users_bp, url_prefix='/api')
     app.register_blueprint(cars_bp, url_prefix='/api')
 
-    # Register error handlers
     app.register_error_handler(Exception, handle_error)
 
     @app.context_processor

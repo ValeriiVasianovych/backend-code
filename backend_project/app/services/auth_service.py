@@ -34,7 +34,6 @@ class AuthService:
         return mongo.db.users.find_one({'email': email})
         
     def generate_tokens(self, user_id):
-        # Get user data to include email
         user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
         if not user:
             raise ValueError("User not found")

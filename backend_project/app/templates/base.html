@@ -73,7 +73,6 @@
                     </li>
                 </ul>
                 <div class="auth-buttons" id="authButtons">
-                    <!-- Will be populated by JavaScript -->
                 </div>
             </div>
         </div>
@@ -114,7 +113,6 @@
             const accessToken = localStorage.getItem('access_token');
             
             if (accessToken) {
-                // Decode the JWT token to get user info
                 const tokenParts = accessToken.split('.');
                 const payload = JSON.parse(atob(tokenParts[1]));
                 
@@ -148,7 +146,6 @@
             window.location.href = "{{ url_for('main.index') }}";
         }
 
-        // Check auth status on page load
         document.addEventListener('DOMContentLoaded', updateAuthButtons);
     </script>
     {% block extra_js %}{% endblock %}
