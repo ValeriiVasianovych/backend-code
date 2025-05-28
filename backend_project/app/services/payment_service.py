@@ -8,12 +8,10 @@ import requests
 class PaymentService:
     @staticmethod
     def process_google_pay_payment(rental_id, payment_token):
-        # Mock Google Pay payment processing (replace with actual gateway integration)
         rental = Rental.find_by_id(rental_id)
         if not rental:
             return jsonify({"error": "Rental not found"}), 404
 
-        # Simulate payment gateway request
         payment_data = {
             "gateway": Config.GOOGLE_PAY_GATEWAY,
             "gatewayMerchantId": Config.GOOGLE_PAY_GATEWAY_MERCHANT_ID,
@@ -22,10 +20,8 @@ class PaymentService:
             "paymentMethodData": payment_token
         }
 
-        # Replace with actual payment gateway API call
         try:
-            # Example: response = requests.post("https://gateway.example.com/process", json=payment_data)
-            response = {"status": "success", "transaction_id": "txn_123456"}  # Mock response
+            response = {"status": "success", "transaction_id": "txn_123456"}
             if response["status"] == "success":
                 Rental.update_payment_status(rental_id, "completed")
                 User.add_payment_method(rental["username"], {

@@ -215,7 +215,48 @@ async function rentCar(carId) {
     }
 
     try {
+        // Check if token is expired
+        const tokenParts = accessToken.split('.');
+        const payload = JSON.parse(atob(tokenParts[1]));
+        const expirationTime = payload.exp * 1000; // Convert to milliseconds
+        
+        if (Date.now() >= expirationTime) {
+            // Token is expired, try to refresh
+            const refreshToken = localStorage.getItem('refresh_token');
+            if (!refreshToken) {
+                window.location.href = "{{ url_for('auth.login_page') }}";
+                return;
+            }
+
+            const response = await fetch('/auth/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    refresh_token: refreshToken
+                })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.tokens) {
+                localStorage.setItem('access_token', data.tokens.access_token);
+                localStorage.setItem('refresh_token', data.tokens.refresh_token);
+                // Retry the rental with new token
+                await rentCar(carId);
+                return;
+            } else {
+                console.error('Token refresh failed:', data.error || 'Unknown error');
+                window.location.href = "{{ url_for('auth.login_page') }}";
+                return;
+            }
+        }
+
         const rentalDays = document.getElementById(`rental-days-${carId}`).value;
+        if (!rentalDays || rentalDays < 1 || rentalDays > 30) {
+            alert('Please enter a valid number of rental days (1-30)');
+            return;
+        }
         
         const response = await fetch('/payments/create-checkout-session', {
             method: 'POST',
@@ -229,21 +270,50 @@ async function rentCar(carId) {
             })
         });
 
-        if (response.ok) {
-            const session = await response.json();
+        const data = await response.json();
+
+        if (response.ok && data.id) {
             const result = await stripe.redirectToCheckout({
-                sessionId: session.id
+                sessionId: data.id
             });
 
             if (result.error) {
+                console.error('Stripe redirect error:', result.error);
                 alert(result.error.message);
             }
         } else {
-            const data = await response.json();
-            alert(data.error || 'Failed to create checkout session');
+            if (data.error === 'Token has expired') {
+                // Token expired during request, try to refresh
+                const refreshToken = localStorage.getItem('refresh_token');
+                if (refreshToken) {
+                    const refreshResponse = await fetch('/auth/refresh', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            refresh_token: refreshToken
+                        })
+                    });
+
+                    const refreshData = await refreshResponse.json();
+                    if (refreshResponse.ok && refreshData.tokens) {
+                        localStorage.setItem('access_token', refreshData.tokens.access_token);
+                        localStorage.setItem('refresh_token', refreshData.tokens.refresh_token);
+                        // Retry the rental with new token
+                        await rentCar(carId);
+                        return;
+                    }
+                }
+                console.error('Token refresh failed during rental');
+                window.location.href = "{{ url_for('auth.login_page') }}";
+            } else {
+                console.error('Rental error:', data.error || 'Unknown error');
+                alert(data.error || 'Failed to create checkout session');
+            }
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error during rental process:', error);
         alert('An error occurred while processing your request');
     }
 }

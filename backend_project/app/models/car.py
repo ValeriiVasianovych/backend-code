@@ -1,9 +1,31 @@
 from app.extensions import mongo
 import datetime
+from .base_model import BaseModel
+from bson import ObjectId
 
-class Car:
+class Car(BaseModel):
+    collection_name = 'cars'
+
+    @classmethod
+    def get_available_cars(cls):
+        return cls.find_all({'available': True})
+
+    @classmethod
+    def update_availability(cls, car_id, available):
+        return cls.update(car_id, {'available': available})
+
+    @classmethod
+    def get_car_by_id(cls, car_id):
+        return cls.find_by_id(car_id)
+
+    @classmethod
+    def get_cars_by_filters(cls, filters=None):
+        if filters is None:
+            filters = {}
+        return cls.find_all(filters)
+
     @staticmethod
-    def create(data):
+    def create(data, owner_id=None):
         car_data = {
             "brand": data["brand"],
             "model": data["model"],
@@ -16,7 +38,8 @@ class Car:
             "mileage": data.get("mileage", 0),
             "seats": data.get("seats", 5),
             "doors": data.get("doors", 4),
-            "created_at": datetime.datetime.utcnow()
+            "created_at": datetime.datetime.utcnow(),
+            "owner_id": ObjectId(owner_id) if owner_id else None
         }
         return mongo.db.cars.insert_one(car_data)
 
@@ -27,6 +50,10 @@ class Car:
     @staticmethod
     def get_by_id(car_id):
         return mongo.db.cars.find_one({"_id": car_id})
+
+    @staticmethod
+    def get_by_owner(owner_id):
+        return list(mongo.db.cars.find({"owner_id": ObjectId(owner_id)}))
 
     @staticmethod
     def update(car_id, data):

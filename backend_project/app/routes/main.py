@@ -25,7 +25,6 @@ def get_current_user():
 
 @main_bp.route('/')
 def index():
-    # Initialize sample cars if none exist
     try:
         current_user = get_current_user()
         return render_template('index.html', current_user=current_user)
@@ -37,8 +36,3 @@ def cars():
     from app.models.car import Car
     cars = Car.get_all()
     return render_template('cars.html', cars=cars)
-
-# {
-#     "email": "asdsad@asfafa.com",
-#     "password": "affafs2Sdddd@"
-# }

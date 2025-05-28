@@ -1,64 +1,60 @@
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.extensions import mongo
-import datetime
+from .base_model import BaseModel
+from datetime import datetime
 
-class User:
-    @staticmethod
-    def create(data):
-        hashed_password = generate_password_hash(data["password"]) if data.get("password") else None
-        user_data = {
-            "username": data["username"],
-            "email": data["email"],
-            "first_name": data.get("first_name"),
-            "last_name": data.get("last_name"),
-            "password": hashed_password,
-            "github_id": data.get("github_id"),
-            "created_at": datetime.datetime.utcnow(),
-            "refresh_tokens": [],
-            "github_access_token": data.get("github_access_token")
-        }
-        return mongo.db.users.insert_one(user_data)
+class User(BaseModel):
+    collection_name = 'users'
 
-    @staticmethod
-    def find_by_username(username):
-        return mongo.db.users.find_one({"username": username})
+    @classmethod
+    def create(cls, data):
+        if "password" in data:
+            data["password"] = generate_password_hash(data["password"])
+        return super().create(data)
 
-    @staticmethod
-    def find_by_email(email):
-        return mongo.db.users.find_one({"email": email})
+    @classmethod
+    def find_by_email(cls, email):
+        return cls.get_collection().find_one({"email": email})
 
-    @staticmethod
-    def find_by_github_id(github_id):
-        return mongo.db.users.find_one({"github_id": github_id})
+    @classmethod
+    def find_by_github_id(cls, github_id):
+        return cls.get_collection().find_one({"github_id": github_id})
 
-    @staticmethod
-    def find_by_id(user_id):
-        return mongo.db.users.find_one({"_id": user_id})
+    @classmethod
+    def verify_password(cls, password, hashed_password):
+        return check_password_hash(hashed_password, password)
 
-    @staticmethod
-    def update_github_token(username, access_token):
-        mongo.db.users.update_one(
-            {"username": username},
-            {"$set": {"github_access_token": access_token}}
-        )
+    @classmethod
+    def update_github_token(cls, user_id, access_token):
+        return cls.update(user_id, {"github_access_token": access_token})
 
-    @staticmethod
-    def add_refresh_token(username, token):
-        mongo.db.users.update_one(
-            {"username": username},
+    @classmethod
+    def add_refresh_token(cls, user_id, token):
+        return cls.get_collection().update_one(
+            {"_id": user_id},
             {"$push": {"refresh_tokens": token}}
         )
 
-    @staticmethod
-    def get_all_users():
-        return list(mongo.db.users.find({}, {"password": 0, "refresh_tokens": 0, "google_access_token": 0}))
-    
-    @staticmethod
-    def delete_user(username):
-        result = mongo.db.users.delete_one({"username": username})
+    @classmethod
+    def get_all_users(cls):
+        return list(cls.get_collection().find(
+            {},
+            {"password": 0, "refresh_tokens": 0, "github_access_token": 0}
+        ))
+
+    @classmethod
+    def find_by_username(cls, username):
+        return cls.get_collection().find_one({"username": username})
+
+    @classmethod
+    def find_by_id(cls, user_id):
+        return cls.get_collection().find_one({"_id": user_id})
+
+    @classmethod
+    def delete_user(cls, username):
+        result = cls.get_collection().delete_one({"username": username})
         return result
 
-    @staticmethod
-    def delete_user_by_id(user_id):
-        result = mongo.db.users.delete_one({"_id": user_id})
+    @classmethod
+    def delete_user_by_id(cls, user_id):
+        result = cls.get_collection().delete_one({"_id": user_id})
         return result

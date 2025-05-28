@@ -34,7 +34,6 @@ class AuthService:
         return mongo.db.users.find_one({'email': email})
         
     def generate_tokens(self, user_id):
-        # Get user data to include email
         user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
         if not user:
             raise ValueError("User not found")
@@ -62,26 +61,3 @@ class AuthService:
             'iat': datetime.utcnow()
         }
         return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm='HS256')
-
-    def change_password(self, user_id, current_password, new_password):
-        try:
-            user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
-            if not user:
-                raise ValueError('User not found')
-            
-            if not self.verify_password(current_password, user['password']):
-                raise ValueError('Current password is incorrect')
-            
-            if not validate_password(new_password):
-                raise ValueError('New password does not meet security requirements')
-            
-            hashed_password = self.hash_password(new_password)
-            mongo.db.users.update_one(
-                {'_id': ObjectId(user_id)},
-                {'$set': {'password': hashed_password}}
-            )
-            
-            return True
-        except Exception as e:
-            logger.error(f"Change password error: {str(e)}")
-            raise

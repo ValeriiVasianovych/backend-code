@@ -4,9 +4,11 @@ from app.utils.decorators import token_required
 from bson import ObjectId
 import stripe
 from app.config import Config
+from app.controllers.payment_controller import PaymentController
 
 payments_bp = Blueprint('payments', __name__)
 stripe.api_key = Config.STRIPE_SECRET_KEY
+payment_controller = PaymentController()
 
 @payments_bp.route('/create-checkout-session', methods=['POST'])
 @token_required
@@ -23,10 +25,8 @@ def create_checkout_session(current_user):
         if not car:
             return jsonify({'error': 'Car not found'}), 404
 
-        # Calculate total price using price_per_day
         total_price = car['price_per_day'] * rental_days
 
-        # Create Stripe checkout session
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -68,4 +68,34 @@ def success():
 
 @payments_bp.route('/cancel')
 def cancel():
-    return render_template('cancel.html') 
+    return render_template('cancel.html')
+
+@payments_bp.route('/api/payments', methods=['POST'])
+@token_required
+def create_payment(current_user):
+    return payment_controller.create_payment()
+
+@payments_bp.route('/api/payments/<payment_id>', methods=['GET'])
+@token_required
+def get_payment(current_user, payment_id):
+    return payment_controller.get_payment(payment_id)
+
+@payments_bp.route('/api/payments/user/<user_id>', methods=['GET'])
+@token_required
+def get_user_payments(current_user, user_id):
+    return payment_controller.get_user_payments(user_id)
+
+@payments_bp.route('/api/payments/rental/<rental_id>', methods=['GET'])
+@token_required
+def get_rental_payments(current_user, rental_id):
+    return payment_controller.get_rental_payments(rental_id)
+
+@payments_bp.route('/api/payments/<payment_id>/status', methods=['PUT'])
+@token_required
+def update_payment_status(current_user, payment_id):
+    return payment_controller.update_payment_status(payment_id)
+
+@payments_bp.route('/payments', methods=['GET'])
+@token_required
+def get_payment_page(current_user):
+    return payment_controller.get_payment_page() 

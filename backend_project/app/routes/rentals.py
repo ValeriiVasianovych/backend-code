@@ -10,7 +10,6 @@ rentals_bp = Blueprint('rentals', __name__)
 @rentals_bp.route('/cars/page', methods=['GET'])
 def cars_page():
     try:
-        # Get tokens from URL parameters if they exist
         access_token = request.args.get('access_token')
         refresh_token = request.args.get('refresh_token')
         
@@ -25,7 +24,6 @@ def cars_page():
     except Exception as e:
         return render_template('cars.html', cars=[])
 
-# Get all cars in the system
 @rentals_bp.route('/api/cars', methods=['GET'])
 @token_required
 def get_cars():
@@ -34,7 +32,6 @@ def get_cars():
     except Exception as e:
         return jsonify({'error': 'Internal server error'}), 500
 
-# Add a new car (available to all users)
 @rentals_bp.route('/api/cars', methods=['POST'])
 @token_required
 def add_car(current_user):
@@ -55,7 +52,6 @@ def add_car(current_user):
     except Exception as e:
         return jsonify({'error': 'Internal server error'}), 500
 
-# Update a car
 @rentals_bp.route('/api/cars/<car_id>', methods=['PUT'])
 @token_required
 def update_car(current_user, car_id):
@@ -68,7 +64,6 @@ def update_car(current_user, car_id):
     except Exception as e:
         return jsonify({'error': 'Internal server error'}), 500
 
-# Get a specific car
 @rentals_bp.route('/api/cars/<car_id>', methods=['GET'])
 def get_car(car_id):
     try:
@@ -85,7 +80,6 @@ def get_car(car_id):
     except Exception as e:
         return jsonify({'error': 'Internal server error'}), 500
 
-# Delete a car
 @rentals_bp.route('/api/cars/<car_id>', methods=['DELETE'])
 @token_required
 def delete_car(current_user, car_id):

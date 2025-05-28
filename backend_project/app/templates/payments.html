@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Payments{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Payment History</h2>
+    
+    {% if payments %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Payment ID</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Payment Method</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment._id }}</td>
+                    <td>${{ payment.amount }}</td>
+                    <td>
+                        <span class="badge {% if payment.status == 'completed' %}bg-success{% elif payment.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ payment.status }}
+                        </span>
+                    </td>
+                    <td>{{ payment.payment_method }}</td>
+                    <td>{{ payment.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewPaymentDetails('{{ payment._id }}')">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No payment history found.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Payment Details Modal -->
+<div class="modal fade" id="paymentDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="paymentDetailsContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewPaymentDetails(paymentId) {
+    fetch(`/api/payments/${paymentId}`, {
+        headers: {
+            'Authorization': `Bearer ${access_token}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const payment = data.data.payment;
+            const content = `
+                <dl class="row">
+                    <dt class="col-sm-4">Payment ID</dt>
+                    <dd class="col-sm-8">${payment._id}</dd>
+                    
+                    <dt class="col-sm-4">Amount</dt>
+                    <dd class="col-sm-8">$${payment.amount}</dd>
+                    
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">${payment.status}</dd>
+                    
+                    <dt class="col-sm-4">Payment Method</dt>
+                    <dd class="col-sm-8">${payment.payment_method}</dd>
+                    
+                    <dt class="col-sm-4">Transaction ID</dt>
+                    <dd class="col-sm-8">${payment.transaction_id || 'N/A'}</dd>
+                    
+                    <dt class="col-sm-4">Created At</dt>
+                    <dd class="col-sm-8">${new Date(payment.created_at).toLocaleString()}</dd>
+                </dl>
+            `;
+            document.getElementById('paymentDetailsContent').innerHTML = content;
+            new bootstrap.Modal(document.getElementById('paymentDetailsModal')).show();
+        } else {
+            alert('Error loading payment details');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading payment details');
+    });
+}
+</script>
+{% endblock %} 
